@@ -1,4 +1,4 @@
-package com.company;
+
 import java.lang.Math;
 import java.util.Random;
 import java.util.Vector;
@@ -12,13 +12,16 @@ public class patient extends Thread {
     private int patientId;
     private long visitTimeNeeded; //tempo richiesto per essere operato
     private int times; //quante volte il paziente deve essere operato
+    private final patientQueueArrayList waitingRoom;
 
     //il paziente con codice giallo ha anche uno specifico dottore richiesto
     private int medicNeeded;
     //il paziente con codice rosso ha bisogno di tutti i medici contemporaneamente
     //il paziente con codice bianco ha bisogno di un medico a caso
 
-    public patient(String code) {
+    public patient(String code, patientQueueArrayList newWaitingRoom) {
+        this.medics = new Vector<>();
+        this.waitingRoom = newWaitingRoom;
         medicNeeded = 0;
         Random randomNumberGenerator = new Random();
         times = randomNumberGenerator.nextInt(5) + 1;
@@ -54,19 +57,31 @@ public class patient extends Thread {
                 e.printStackTrace();
             }
         }
+        System.out.println(Thread.currentThread().getName() + ": Mi stanno a servì tutti");
         Main.pause(visitTimeNeeded);
+        for(i = 0; i < medics.size(); i++){
+            try{
+                medics.elementAt(i).unlock();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+        System.out.println(Thread.currentThread().getName() + ": M' hanno servito tutti.");
         if(times > 0){
             times--;
-            goBackInWaitingRoom();
+            Main.pause(1000);
+            //waitingRoom.put(this);
         }
-
-
     }
 
     public void addReadyMedic(Lock readyMedic){
         medics.add(readyMedic);
     }
 
+    public int getTimes(){
+        return this.times;
+    }
 
     private static long timeNeeded(int priority) {
         Random randomNumberGenerator = new Random();
@@ -97,7 +112,6 @@ public class patient extends Thread {
         if (this.priority == 2)
             System.out.println("Medico richiesto: " + this.medicNeeded);
         System.out.println("---------------------------------------------------------");
-
     }
 
     public int getCode() {
@@ -105,3 +119,4 @@ public class patient extends Thread {
     }
 
 }
+

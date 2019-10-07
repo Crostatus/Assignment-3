@@ -1,0 +1,26 @@
+public class patientManager {
+
+    patientQueueArrayList patientRoom;
+    Medics workingMedics;
+
+
+    public patientManager(patientQueueArrayList newPatientRoom) {
+        this.patientRoom = newPatientRoom;
+        this.workingMedics = new Medics();
+        workingMedics.printTest();
+    }
+
+    public void testRedPatients() {
+        patient firstTest = patientRoom.getPatient();
+        for(int i = 0; i < 9; i++)
+            firstTest.addReadyMedic(workingMedics.getMedic(i));
+        firstTest.start();
+        //workingMedics.printTest();
+        firstTest = patientRoom.getPatient();
+        for(int i = 0; i < 9; i++)
+            firstTest.addReadyMedic(workingMedics.getMedic(i));
+        firstTest.start();
+
+    }
+}
+
