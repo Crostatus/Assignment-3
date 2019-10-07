@@ -1,11 +1,9 @@
-package com.company;
-
 import java.util.Vector;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Medics {
-    private Vector<Lock> medics;
+    private final Vector<Lock> medics;
 
     //creazione della stanza con 10 medici, 10 locks
     //i pazienti urgenti dovranno acquisirli tutti, quelli gialli uno specifico e quelli bianci uno a caso
@@ -16,8 +14,8 @@ public class Medics {
         this.medics = new Vector<>(10);
         int i;
         for(i = 0; i < medics.capacity(); i++){
-          Lock newMedic = new ReentrantLock();
-          medics.add(newMedic);
+            Lock newMedic = new ReentrantLock();
+            medics.add(newMedic);
         }
     }
 
@@ -25,6 +23,9 @@ public class Medics {
         return this.medics.elementAt(index);
     }
 
-
+    public void printTest(){
+        for(int i = 0; i < medics.size(); i++)
+            System.out.println(medics.elementAt(i));
+    }
 
 }
