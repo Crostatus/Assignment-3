@@ -1,60 +1,58 @@
-public class WhitePatient extends Thread{
-
-    Hospital prontoSoccorso;
-    int times;
-    long visitTimeNeeded;
+//Un paziente con codice giallo è un paziente con priorià minima che può essere curato da qualsiasi medico.
+public class WhitePatient extends Patient{
 
     public WhitePatient(Hospital newProntoSoccorso){
-        this.prontoSoccorso = newProntoSoccorso;
-        this.times = 3;
-        this.visitTimeNeeded = 2000;
+        super(newProntoSoccorso);
         Thread.currentThread().setPriority(1);
+        this.visitTimeNeeded += 500;
     }
 
     public void run(){
-        System.out.println("                                                    Sono bianco, " + Thread.currentThread().getName() + " e sono sveglio!");
         int medicNeeded;
         prontoSoccorso.lockMedici.lock();
         try {
-            while (prontoSoccorso.redPatientsInQueue()) {
-                try {
-                    prontoSoccorso.yourTurn.await();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            while ((medicNeeded = prontoSoccorso.whitePatientCanGoIn()) < 0) {
-                try {
-                    prontoSoccorso.yourTurn.await();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("E' entrato il paziente bianco " + Thread.currentThread().getName() + " dal medico " + medicNeeded);
-            prontoSoccorso.whitePatientGotIn(medicNeeded);
+            givePriorityToRedPatients();
+
+            medicNeeded = waitMyTurn();
+
+            prontoSoccorso.WYPatientGotIn(medicNeeded, "white");
+            printPatientGotIn("bianco", medicNeeded);
             prontoSoccorso.yourTurn.signalAll();
         }
         finally{
             prontoSoccorso.lockMedici.unlock();
         }
-
-        Main.pause(visitTimeNeeded);
-
+        //inizio visita
+        MainClass.pause(visitTimeNeeded);
+        //termine visita
         prontoSoccorso.lockMedici.lock();
         try{
-            System.out.println("E' uscito il paziente bianco " + Thread.currentThread().getName());
-            prontoSoccorso.whitePatientGettingOut(medicNeeded);
+            prontoSoccorso.WYPatientGettingOut(medicNeeded);
+            times--;
+            printPatientGotOut("bianco", medicNeeded);
         }
         finally{
             prontoSoccorso.lockMedici.unlock();
         }
 
-        times--;
         if(times > 0){
-            Main.pause(1000);
+            MainClass.pause(1000);
             run();
         }
     }
 
-
+    //Quando un paziente con codice bianco arriva, resta in attesa di un medico che al momento non sta servendo o ha in coda pazienti con priorità più alta
+    //di lui.
+    protected int waitMyTurn(){
+        int freeMedic;
+        while ((freeMedic = prontoSoccorso.whitePatientCanGoIn()) < 0) {
+            try {
+                prontoSoccorso.yourTurn.await();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return freeMedic;
+    }
+    
 }
