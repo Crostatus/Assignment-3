@@ -1,65 +1,58 @@
-import java.util.Random;
-
-public class YellowPatient extends Thread{
-
-    Hospital prontoSoccorso;
-    int medicNeeded;
-    int times;
-    long visitTimeNeeded;
+//Un paziente con codice giallo è un paziente che ha priorià media ed ha bisogno di essere visitato
+//da uno specifico medico per essere curato.
+public class YellowPatient extends Patient{
 
     public YellowPatient(Hospital newProntoSoccorso){
-        Random randomNumberGenerator = new Random();
-        this.prontoSoccorso = newProntoSoccorso;
-        this.times = 3;
-        this.medicNeeded = randomNumberGenerator.nextInt(9);
-        this.visitTimeNeeded = 3000;
+        super(newProntoSoccorso);
+        this.visitTimeNeeded += 1000;
         Thread.currentThread().setPriority(5);
     }
 
     public void run(){
-            System.out.println("                                                    Sono giallo, " + Thread.currentThread().getName() + " e sono sveglio!");
-            prontoSoccorso.lockMedici.lock();
-            try {
-                while (prontoSoccorso.redPatientsInQueue()) {
-                    try {
-                        prontoSoccorso.yourTurn.await();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (!prontoSoccorso.yellowPatientCanGoIn(medicNeeded))
-                    prontoSoccorso.yellowPatients[medicNeeded]++;
+        prontoSoccorso.lockMedici.lock();
+        try {
+            givePriorityToRedPatients();
 
-                while (!prontoSoccorso.yellowPatientCanGoIn(medicNeeded)) {
-                    try {
-                        prontoSoccorso.yourTurn.await();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                System.out.println("E' entrato il paziente giallo " + Thread.currentThread().getName() + " dal medico " + medicNeeded);
-                prontoSoccorso.yellowPatientGotIn(medicNeeded);
-                prontoSoccorso.yourTurn.signalAll();
-            }
+            waitMyTurn();
+
+            prontoSoccorso.WYPatientGotIn(medicNeeded, "yellow");
+            printPatientGotIn("giallo", medicNeeded);
+            prontoSoccorso.yourTurn.signalAll();
+        }
         finally {
             prontoSoccorso.lockMedici.unlock();
         }
-
-        Main.pause(visitTimeNeeded);
-
+        //inizia la visita
+        MainClass.pause(visitTimeNeeded);
+        //finita la visita
         prontoSoccorso.lockMedici.lock();
         try{
-            System.out.println("E' uscito il paziente giallo " + Thread.currentThread().getName());
-            prontoSoccorso.yellowPatientGettingOut(medicNeeded);
+            prontoSoccorso.WYPatientGettingOut(medicNeeded);
+            times--;
+            printPatientGotOut("giallo", medicNeeded);
         }
         finally{
             prontoSoccorso.lockMedici.unlock();
         }
 
-        times--;
         if(times > 0){
-            Main.pause(1000);
+            MainClass.pause(1500);
             run();
+        }
+    }
+
+    //Quando un paziente con codice giallo arriva, aumenta il contatore dei pazienti in attesa del medico da lui richiesto, in modo da comunicare ad ogni
+    //altro paziente con priorità minore di non poter entrare a fare alcuna visita. In seguito, attende il suo turno,
+    //ovvero che il paziente al momento in visita esca e renda di nuovo disponibile il medico richiesto.
+    protected void waitMyTurn(){
+        prontoSoccorso.yellowPatients[medicNeeded]++;
+
+        while (!prontoSoccorso.yellowPatientCanGoIn(medicNeeded)) {
+            try {
+                prontoSoccorso.yourTurn.await();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
