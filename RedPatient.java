@@ -1,5 +1,5 @@
 //Un paziente con codice rosso è un paziente che ha priorià massima ed ha bisogno di essere visitato
-//da tutti i 10 medici disponibili contemporaneamente per essere curato.
+
 public class RedPatient extends Patient {
 
     public RedPatient(Hospital newProntoSoccorso) {
